@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>番茄小乐园 V2 | 历史回顾版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>番茄口袋版 V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -15,596 +15,488 @@
                     fontFamily: { sans: ['Nunito', 'sans-serif'] },
                     colors: {
                         pomo: { 
-                            bg: '#FFF5F5',
+                            bg: '#FFF0F0',
                             red: '#FF6B6B',
-                            dark: '#c0392b',
-                            rotten: '#8D6E63', // 烂番茄色
+                            dark: '#D63031',
+                            rotten: '#8D6E63',
                             green: '#1DD1A1',
-                            yellow: '#FECA57',
+                            yellow: '#FDCB6E',
                             blue: '#48DBFB',
-                            text: '#2d3436'
+                            text: '#2D3436'
                         }
                     },
                     boxShadow: {
-                        'cute': '4px 4px 0px 0px rgba(0,0,0,0.1)',
-                        'cute-hover': '2px 2px 0px 0px rgba(0,0,0,0.1)',
-                        'inner-cute': 'inset 2px 2px 5px rgba(0,0,0,0.05)'
+                        'soft': '0 4px 15px rgba(0,0,0,0.05)',
+                        'btn': '0 4px 0px rgba(0,0,0,0.1)'
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #FFF0F0; background-image: radial-gradient(#FFD1D1 1px, transparent 1px); background-size: 20px 20px; }
-        .task-card.active-task { border: 3px solid #FF6B6B; background-color: #FFF; transform: scale(1.02); }
-        .ghost { opacity: 0.5; background: #f0f0f0; border: 2px dashed #ccc; }
+        body { background-color: #FFF0F0; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* 烂番茄抖动动画 */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        
+        .active-task { border: 2px solid #FF6B6B !important; background-color: #fff5f5 !important; }
+        
+        /* 红色删除线动画 */
+        .strike-red {
+            text-decoration: line-through;
+            text-decoration-color: #FF6B6B;
+            text-decoration-thickness: 3px;
+            color: #b2bec3; /* 完成后文字变灰 */
+            opacity: 0.8;
         }
-        .shake-anim { animation: shake 0.5s; }
+
+        /* 烂番茄震动 */
+        @keyframes rotShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            75% { transform: translateX(5px) rotate(5deg); }
+        }
+        .rotten-trigger { animation: rotShake 0.4s ease-in-out; color: #8D6E63 !important; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden text-pomo-text font-bold">
+<body class="h-screen flex flex-col text-pomo-text overflow-hidden">
 
-    <div class="w-full md:w-5/12 lg:w-1/3 bg-white border-r-4 border-pomo-bg flex flex-col justify-center items-center relative z-10 shadow-cute p-6">
+    <div class="bg-white/90 backdrop-blur-md z-20 px-3 py-3 flex justify-between items-center shadow-sm shrink-0">
+        <button onclick="exportCSV()" class="w-9 h-9 flex items-center justify-center bg-green-50 text-green-600 rounded-xl active:scale-95 transition-transform" title="导出Excel">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        </button>
+
+        <div class="flex items-center gap-2">
+            <button onclick="changeDate(-1)" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 font-bold active:bg-gray-200">‹</button>
+            <div class="flex flex-col items-center relative" onclick="document.getElementById('datePicker').showPicker()">
+                <div class="text-[10px] text-gray-400 uppercase tracking-widest font-black" id="dateLabel">TODAY</div>
+                <input type="date" id="datePicker" onchange="jumpToDate(this.value)" class="absolute opacity-0 w-full h-full top-0 left-0 z-10">
+                <div class="font-black text-lg leading-none text-pomo-text" id="displayDateStr">...</div>
+            </div>
+            <button onclick="changeDate(1)" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 font-bold active:bg-gray-200">›</button>
+        </div>
+
+        <div class="w-9"></div>
+    </div>
+
+    <div class="bg-white rounded-b-[2rem] shadow-soft pt-2 pb-5 px-4 flex flex-col items-center shrink-0 z-10 transition-colors duration-500" id="timerContainer">
         
-        <div class="absolute top-6 left-6 text-pomo-red text-xl tracking-wider font-extrabold">🍅 PomoLand</div>
-
-        <div class="mb-6 text-center w-full max-w-xs">
-            <div class="text-gray-400 text-xs mb-2 uppercase tracking-widest">CURRENT MISSION</div>
-            <div id="currentTaskDisplay" class="text-xl text-pomo-text min-h-[2rem] border-b-2 border-dashed border-gray-300 pb-1 truncate transition-colors">
-                ✨ 请在右侧选择任务
+        <div class="w-full text-center mb-2 h-6">
+            <div id="currentTaskDisplay" class="text-sm font-bold text-gray-400 truncate max-w-[85%] mx-auto">
+                👇 点击下方任务开始
             </div>
         </div>
 
-        <div class="relative w-64 h-64 flex justify-center items-center mb-6 bg-pomo-bg rounded-full shadow-inner-cute border-8 border-white group">
-            <div class="flex flex-col items-center z-10">
-                <div class="text-7xl tabular-nums text-pomo-red drop-shadow-sm transition-colors" id="timerDisplay">25:00</div>
-                <div id="pauseIndicator" class="mt-2 flex gap-1 h-4 opacity-0 transition-opacity">
-                    <span class="w-2 h-2 rounded-full bg-gray-300"></span>
-                    <span class="w-2 h-2 rounded-full bg-gray-300"></span>
-                    <span class="w-2 h-2 rounded-full bg-gray-300"></span>
-                </div>
+        <div class="relative w-40 h-40 flex justify-center items-center mb-4">
+            <div id="pauseIndicator" class="absolute top-8 flex gap-1 opacity-0 transition-opacity">
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
             </div>
+
+            <div class="text-4xl font-black tabular-nums text-pomo-text tracking-tighter" id="timerDisplay">25:00</div>
             
-            <svg class="absolute top-0 left-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="46" stroke="#eee" stroke-width="4" fill="none" />
-                <circle id="timerCircle" cx="50" cy="50" r="46" stroke="#FF6B6B" stroke-width="4" fill="none" 
-                        stroke-dasharray="289" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-500 ease-linear"/>
+            <svg class="absolute top-0 left-0 w-full h-full -rotate-90 pointer-events-none overflow-visible" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="46" stroke="#f3f4f6" stroke-width="5" fill="none" />
+                <circle id="timerCircle" cx="50" cy="50" r="46" stroke="#FF6B6B" stroke-width="5" fill="none" 
+                        stroke-dasharray="289" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000 ease-linear"/>
             </svg>
         </div>
 
-        <div class="flex gap-4">
+        <div class="flex gap-3 w-full max-w-[200px]">
             <button onclick="toggleTimer()" id="mainBtn" 
-                class="bg-pomo-red text-white text-lg px-8 py-3 rounded-2xl shadow-cute hover:translate-y-[2px] hover:shadow-cute-hover transition-all active:translate-y-[4px] active:shadow-none disabled:bg-gray-300 disabled:shadow-none">
-                开始专注
+                class="flex-1 bg-pomo-red text-white text-base font-bold py-2 rounded-xl shadow-btn active:translate-y-1 active:shadow-none transition-all disabled:bg-gray-300 disabled:shadow-none">
+                开始
             </button>
             <button onclick="resetTimer()" 
-                class="bg-gray-100 text-gray-500 text-lg px-6 py-3 rounded-2xl shadow-cute hover:bg-gray-200 transition-all active:translate-y-[2px] hover:shadow-cute-hover">
-                重置
+                class="px-4 bg-gray-100 text-gray-500 font-bold rounded-xl shadow-btn active:translate-y-1 active:shadow-none transition-all">
+                ↺
             </button>
-        </div>
-        
-        <div class="mt-6 text-center">
-            <div id="modeDisplay" class="inline-block px-4 py-1 rounded-full bg-red-50 text-pomo-red text-xs font-bold">READY TO FOCUS</div>
-        </div>
-
-        <div class="absolute bottom-4 text-xs text-gray-300 text-center px-4">
-            提示：暂停超过 3 次将会产生一个烂番茄 🤢
         </div>
     </div>
 
-    <div class="w-full md:w-7/12 lg:w-2/3 flex flex-col h-full bg-slate-50 relative">
+    <div class="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-6" id="taskListContainer">
         
-        <div class="bg-white p-4 shadow-sm flex justify-between items-center z-20">
-            <button onclick="changeDate(-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-pomo-red hover:text-white transition-colors flex items-center justify-center font-bold text-lg">‹</button>
-            <div class="flex flex-col items-center">
-                <input type="date" id="datePicker" onchange="jumpToDate(this.value)" class="font-bold text-gray-700 bg-transparent outline-none cursor-pointer text-center">
-                <span id="dateLabel" class="text-xs text-gray-400 font-normal">今天</span>
+        <div class="flex flex-col gap-3">
+            <div class="flex justify-between items-end px-2">
+                <h2 class="font-bold text-pomo-red text-lg">📝 计划 (Planned)</h2>
+                <span class="text-xs text-gray-400 font-bold" id="statSummary">0 / 0</span>
             </div>
-            <button onclick="changeDate(1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-pomo-red hover:text-white transition-colors flex items-center justify-center font-bold text-lg">›</button>
+            
+            <div class="bg-white p-2 pl-3 rounded-xl shadow-sm flex items-center gap-2 border border-gray-100">
+                <input type="text" id="planInput" placeholder="新任务..." class="flex-1 bg-transparent outline-none text-base h-10">
+                <input type="number" id="planEst" value="1" class="w-8 text-center bg-gray-50 rounded h-8 text-sm font-bold text-gray-500">
+                <button onclick="addTask('planned')" class="w-10 h-10 bg-pomo-red text-white rounded-lg font-bold text-xl active:scale-95 transition-transform">+</button>
+            </div>
+
+            <div id="plannedList" class="flex flex-col gap-3 pb-2 min-h-[50px]"></div>
         </div>
 
-        <div class="p-4 md:p-8 overflow-y-auto no-scrollbar flex flex-col gap-6 flex-1">
-            <div class="flex flex-col gap-3">
-                <h2 class="text-lg flex items-center gap-2 text-pomo-red">
-                    <span>📅</span> 计划清单 (Planned)
-                </h2>
-                
-                <div class="bg-white p-2 rounded-2xl shadow-sm flex gap-2 items-center border-2 border-transparent focus-within:border-pomo-red transition-colors">
-                    <input type="text" id="planInput" placeholder="添加计划任务..." 
-                        class="flex-1 bg-transparent outline-none text-base ml-2 placeholder-gray-300">
-                    <div class="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
-                        <span class="text-xs text-gray-400">预估</span>
-                        <input type="number" id="planEst" value="1" min="1" max="10" 
-                            class="w-6 text-center bg-transparent outline-none border-b border-gray-300 focus:border-pomo-red text-sm">
-                    </div>
-                    <button onclick="addTask('planned')" class="bg-pomo-red text-white w-8 h-8 rounded-lg shadow-sm hover:bg-pomo-dark text-xl leading-none flex items-center justify-center pb-1">+</button>
-                </div>
-
-                <div id="plannedList" class="flex flex-col gap-3 min-h-[60px] pb-4"></div>
+        <div class="flex flex-col gap-3 pb-20">
+            <h2 class="font-bold text-pomo-blue text-lg px-2">⚡ 干扰 (Unplanned)</h2>
+            
+            <div class="bg-white p-2 pl-3 rounded-xl shadow-sm flex items-center gap-2 border border-gray-100">
+                <input type="text" id="unplanInput" placeholder="临时插入..." class="flex-1 bg-transparent outline-none text-base h-10">
+                <button onclick="addTask('unplanned')" class="w-10 h-10 bg-pomo-blue text-white rounded-lg font-bold text-xl active:scale-95 transition-transform">+</button>
             </div>
 
-            <div class="flex flex-col gap-3">
-                <h2 class="text-lg flex items-center gap-2 text-pomo-blue">
-                    <span>⚡</span> 计划外干扰 (Unplanned)
-                </h2>
-                
-                <div class="bg-white p-2 rounded-2xl shadow-sm flex gap-2 items-center border-2 border-transparent focus-within:border-pomo-blue transition-colors">
-                    <input type="text" id="unplanInput" placeholder="突然来了什么事？" 
-                        class="flex-1 bg-transparent outline-none text-base ml-2 placeholder-gray-300">
-                    <button onclick="addTask('unplanned')" class="bg-pomo-blue text-white w-8 h-8 rounded-lg shadow-sm hover:bg-sky-400 text-xl leading-none flex items-center justify-center pb-1">+</button>
-                </div>
-
-                <div id="unplannedList" class="flex flex-col gap-3 min-h-[60px] pb-4"></div>
-            </div>
-        </div>
-
-        <div class="bg-white/90 backdrop-blur border-t border-gray-100 p-4 flex justify-around items-center text-sm">
-            <div class="text-center">
-                <div class="text-gray-400 text-[10px] mb-1">完成/烂番茄</div>
-                <div class="font-black text-gray-700">
-                    <span id="statDone" class="text-pomo-red text-xl">0</span> 
-                    <span class="text-gray-300 mx-1">/</span>
-                    <span id="statRotten" class="text-pomo-rotten">0</span>
-                </div>
-            </div>
-            <div class="w-px h-8 bg-gray-200"></div>
-            <div class="text-center">
-                <div class="text-gray-400 text-[10px] mb-1">预估偏差</div>
-                <div id="statDiff" class="font-black text-gray-700 text-xl">0</div>
-            </div>
-            <div class="w-px h-8 bg-gray-200"></div>
-            <div class="text-center">
-                <div class="text-gray-400 text-[10px] mb-1">有效时长</div>
-                <div class="font-black text-gray-700"><span id="statMins" class="text-xl">0</span> m</div>
-            </div>
+            <div id="unplannedList" class="flex flex-col gap-3 min-h-[50px]"></div>
         </div>
     </div>
 
     <script>
-        // --- 全局状态 ---
-        const DB_KEY = 'pomoland_v2_data'; // 数据存储Key
-        let currentDateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const DB_KEY = 'pomo_mobile_v3_data';
+        let currentDateStr = new Date().toISOString().split('T')[0];
         let currentDayData = { planned: [], unplanned: [] };
         
-        let activeTaskId = null;
-        let activeTaskType = null; // 'planned' or 'unplanned'
-        
-        // --- 计时器变量 ---
+        // 计时器变量
         const WORK_TIME = 25 * 60;
         const BREAK_TIME = 5 * 60;
         let timeLeft = WORK_TIME;
         let timerId = null;
         let isWorkMode = true;
-        let pauseCount = 0; // 暂停计数
+        let pauseCount = 0;
+        let activeTaskId = null;
+        let activeTaskType = null;
 
-        // --- 初始化 ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDataForDate(currentDateStr);
+        window.onload = () => {
+            loadData(currentDateStr);
             updateDateUI();
-            
-            // 初始化 Sortable (拖拽)
-            initSortable();
-        });
+            initDragDrop();
+        };
 
-        // --- 数据管理 (核心) ---
-        function loadDataForDate(dateStr) {
-            const allData = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
-            if (!allData[dateStr]) {
-                allData[dateStr] = { planned: [], unplanned: [] };
-            }
-            currentDayData = allData[dateStr];
-            activeTaskId = null; // 切换日期后重置选中
-            activeTaskType = null;
-            resetTimerLogicOnly(); // 重置计时器状态
-            renderAll();
+        // --- 数据存储 ---
+        function loadData(dateStr) {
+            const all = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
+            if (!all[dateStr]) all[dateStr] = { planned: [], unplanned: [] };
+            currentDayData = all[dateStr];
+            activeTaskId = null;
+            resetTimerUI(); 
+            render();
         }
 
         function saveData() {
-            const allData = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
-            allData[currentDateStr] = currentDayData;
-            localStorage.setItem(DB_KEY, JSON.stringify(allData));
-            updateStats();
+            const all = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
+            all[currentDateStr] = currentDayData;
+            localStorage.setItem(DB_KEY, JSON.stringify(all));
+            updateStatsUI();
         }
 
-        function changeDate(offset) {
-            const date = new Date(currentDateStr);
-            date.setDate(date.getDate() + offset);
-            currentDateStr = date.toISOString().split('T')[0];
+        // --- 日期逻辑 (修复版) ---
+        function changeDate(off) {
+            const d = new Date(currentDateStr);
+            d.setDate(d.getDate() + off);
+            currentDateStr = d.toISOString().split('T')[0];
             updateDateUI();
-            loadDataForDate(currentDateStr);
+            loadData(currentDateStr);
         }
 
         function jumpToDate(val) {
             if(val) {
                 currentDateStr = val;
                 updateDateUI();
-                loadDataForDate(currentDateStr);
+                loadData(currentDateStr);
             }
         }
 
         function updateDateUI() {
             document.getElementById('datePicker').value = currentDateStr;
-            const today = new Date().toISOString().split('T')[0];
-            const displayDate = new Date(currentDateStr);
-            const label = currentDateStr === today ? "今天 (Today)" : 
-                displayDate.toLocaleDateString('zh-CN', { weekday: 'long' });
-            document.getElementById('dateLabel').textContent = label;
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            let label = "";
+            if (currentDateStr === todayStr) {
+                label = "TODAY";
+            } else if (currentDateStr < todayStr) {
+                label = "HISTORY";
+            } else {
+                label = "FUTURE";
+            }
 
-            // 如果不是今天，禁用计时器按钮
-            const isToday = currentDateStr === today;
+            const d = new Date(currentDateStr);
+            document.getElementById('dateLabel').innerText = label;
+            document.getElementById('displayDateStr').innerText = `${d.getMonth()+1}.${d.getDate()}`;
+            
+            // 只有今天可以操作
+            const isToday = (currentDateStr === todayStr);
             document.getElementById('mainBtn').disabled = !isToday;
-            if(!isToday) {
-                document.getElementById('currentTaskDisplay').textContent = "🔒 只能在“今天”进行专注";
+            document.getElementById('planInput').disabled = !isToday;
+            document.getElementById('unplanInput').disabled = !isToday;
+        }
+
+        // --- 导出逻辑 (Excel/CSV) ---
+        function exportCSV() {
+            const allData = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
+            // CSV BOM 头，解决Excel乱码问题
+            let csvContent = "\uFEFF日期,任务类型,任务名称,预估番茄,实际完成,烂番茄,状态\n";
+
+            // 遍历所有日期，按日期倒序
+            const dates = Object.keys(allData).sort().reverse();
+            
+            dates.forEach(date => {
+                const dayData = allData[date];
+                // 遍历 Plan
+                dayData.planned.forEach(t => {
+                    const status = t.manualDone ? "已完成" : "进行中";
+                    csvContent += `${date},计划任务,"${t.title}",${t.est},${t.done},${t.rotten || 0},${status}\n`;
+                });
+                // 遍历 Unplanned
+                dayData.unplanned.forEach(t => {
+                    const status = t.manualDone ? "已完成" : "进行中";
+                    csvContent += `${date},干扰/临时,"${t.title}",0,${t.done},${t.rotten || 0},${status}\n`;
+                });
+            });
+
+            // 创建下载
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `番茄记录导出_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- 任务管理 ---
+        function addTask(type) {
+            const input = document.getElementById(type === 'planned' ? 'planInput' : 'unplanInput');
+            const est = document.getElementById('planEst');
+            const val = input.value.trim();
+            if(!val) return;
+
+            const task = {
+                id: Date.now(),
+                title: val,
+                est: type === 'planned' ? parseInt(est.value) : 0,
+                done: 0,
+                rotten: 0,
+                manualDone: false // 新增：手动完成状态
+            };
+            
+            currentDayData[type].push(task);
+            input.value = '';
+            saveData();
+            render();
+        }
+
+        function toggleDone(id, type, e) {
+            e.stopPropagation();
+            const task = currentDayData[type].find(x => x.id === id);
+            if(task) {
+                task.manualDone = !task.manualDone;
+                saveData();
+                render();
             }
         }
 
-        // --- 任务操作 ---
-        function addTask(type) {
-            const inputId = type === 'planned' ? 'planInput' : 'unplanInput';
-            const estId = 'planEst';
-            const input = document.getElementById(inputId);
-            const title = input.value.trim();
-            const estVal = type === 'planned' ? parseInt(document.getElementById(estId).value) : 0;
-
-            if (!title) return;
-
-            const newTask = {
-                id: Date.now(),
-                title: title,
-                estimated: estVal,
-                completed: 0,
-                rotten: 0 // 新增：烂番茄数量
-            };
-
-            currentDayData[type].push(newTask);
-            input.value = '';
-            saveData();
-            renderAll();
+        function deleteTask(id, type, e) {
+            e.stopPropagation();
+            if(confirm('彻底删除这条任务？')) {
+                currentDayData[type] = currentDayData[type].filter(x => x.id !== id);
+                if(activeTaskId === id) {
+                    activeTaskId = null;
+                    document.getElementById('currentTaskDisplay').innerText = "👇 点击下方任务开始";
+                }
+                saveData();
+                render();
+            }
         }
 
         function selectTask(id, type) {
-            // 只有今天才能选任务
-            if (currentDateStr !== new Date().toISOString().split('T')[0]) return;
-
+            if(currentDateStr !== new Date().toISOString().split('T')[0]) return;
             activeTaskId = id;
             activeTaskType = type;
-            renderAll();
+            render();
             
-            const task = currentDayData[type].find(t => t.id === id);
-            const display = document.getElementById('currentTaskDisplay');
-            display.textContent = task.title;
-            display.classList.add('text-pomo-red');
+            const t = currentDayData[type].find(x => x.id === id);
+            const label = document.getElementById('currentTaskDisplay');
+            label.innerText = `正在进行: ${t.title}`;
+            label.className = "text-sm font-bold text-pomo-red truncate max-w-[85%] mx-auto";
         }
 
-        function deleteTask(id, type, event) {
-            event.stopPropagation();
-            if(confirm('删除此任务？')) {
-                currentDayData[type] = currentDayData[type].filter(t => t.id !== id);
-                if (activeTaskId === id) {
-                    activeTaskId = null;
-                    document.getElementById('currentTaskDisplay').textContent = "✨ 请在右侧选择任务";
-                }
-                saveData();
-                renderAll();
-            }
-        }
-
-        // --- 拖拽系统 (Sortable) ---
-        function initSortable() {
-            const plannedEl = document.getElementById('plannedList');
-            const unplannedEl = document.getElementById('unplannedList');
-
-            // 计划列表
-            new Sortable(plannedEl, {
-                group: 'tasks', // 允许互相拖拽
-                animation: 150,
-                ghostClass: 'ghost',
-                delay: 100, // 稍微防误触
-                delayOnTouchOnly: true,
-                onEnd: function (evt) {
-                    onDragEnd(evt, 'planned');
-                }
-            });
-
-            // 计划外列表
-            new Sortable(unplannedEl, {
+        // --- 拖拽 ---
+        function initDragDrop() {
+            const cfg = {
                 group: 'tasks',
+                delay: 150, 
+                delayOnTouchOnly: true,
+                touchStartThreshold: 5,
                 animation: 150,
-                ghostClass: 'ghost',
-                delay: 100,
-                onEnd: function (evt) {
-                    onDragEnd(evt, 'unplanned');
+                ghostClass: 'opacity-50',
+                onEnd: (evt) => {
+                    const getIds = (elId) => Array.from(document.getElementById(elId).children).map(el => parseInt(el.dataset.id));
+                    const all = [...currentDayData.planned, ...currentDayData.unplanned];
+                    currentDayData.planned = getIds('plannedList').map(id => all.find(x=>x.id===id));
+                    currentDayData.unplanned = getIds('unplannedList').map(id => all.find(x=>x.id===id));
+                    saveData();
+                    render();
                 }
-            });
+            };
+            new Sortable(document.getElementById('plannedList'), cfg);
+            new Sortable(document.getElementById('unplannedList'), cfg);
         }
 
-        function onDragEnd(evt, fromType) {
-            const itemEl = evt.item;
-            const taskId = parseInt(itemEl.getAttribute('data-id'));
-            const toType = evt.to.id === 'plannedList' ? 'planned' : 'unplanned';
-            const newIndex = evt.newIndex;
-            const oldIndex = evt.oldIndex;
-            
-            // 1. 获取原列表和目标列表的数据引用
-            // 注意：Sortable 修改了 DOM，我们需要手动同步数据
-            
-            // 简单粗暴且安全的方法：
-            // 因为 DOM 顺序已经变了，我们重新按照 DOM 顺序构建数据数组
-            
-            rebuildDataFromDOM();
-            saveData();
-            // 注意：这里不需要调 renderAll()，因为 DOM 已经由 Sortable 移动好了
-            // 但是为了刷新样式（比如颜色条变化），还是建议重新渲染一次，虽然会闪一下
-            renderAll(); 
-        }
+        // --- 渲染 ---
+        function render() {
+            const pEl = document.getElementById('plannedList');
+            const uEl = document.getElementById('unplannedList');
+            pEl.innerHTML = ''; uEl.innerHTML = '';
 
-        function rebuildDataFromDOM() {
-            // 临时保存所有任务以便查找
-            const allTasksTemp = [...currentDayData.planned, ...currentDayData.unplanned];
-            
-            const newPlanned = [];
-            document.querySelectorAll('#plannedList .task-card').forEach(el => {
-                const id = parseInt(el.getAttribute('data-id'));
-                const t = allTasksTemp.find(x => x.id === id);
-                if(t) newPlanned.push(t);
-            });
+            const makeCard = (t, type) => {
+                const isActive = activeTaskId === t.id;
+                const isDone = t.manualDone;
+                
+                const div = document.createElement('div');
+                div.className = `bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2 transition-all active:scale-[0.98] ${isActive ? 'active-task' : ''}`;
+                div.dataset.id = t.id;
+                div.onclick = () => selectTask(t.id, type);
 
-            const newUnplanned = [];
-            document.querySelectorAll('#unplannedList .task-card').forEach(el => {
-                const id = parseInt(el.getAttribute('data-id'));
-                const t = allTasksTemp.find(x => x.id === id);
-                if(t) newUnplanned.push(t);
-            });
-
-            currentDayData.planned = newPlanned;
-            currentDayData.unplanned = newUnplanned;
-        }
-
-
-        // --- 渲染系统 ---
-        function renderAll() {
-            const planList = document.getElementById('plannedList');
-            const unplanList = document.getElementById('unplannedList');
-            planList.innerHTML = '';
-            unplanList.innerHTML = '';
-
-            currentDayData.planned.forEach(t => planList.appendChild(createCard(t, 'planned')));
-            currentDayData.unplanned.forEach(t => unplanList.appendChild(createCard(t, 'unplanned')));
-            
-            updateStats();
-        }
-
-        function createCard(task, type) {
-            const div = document.createElement('div');
-            const isActive = activeTaskId === task.id;
-            div.className = `task-card bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer transition-all hover:shadow-md select-none ${isActive ? 'active-task' : ''}`;
-            div.setAttribute('data-id', task.id);
-            div.onclick = () => selectTask(task.id, type);
-
-            // 生成番茄
-            let tomatoesHtml = '';
-            
-            // 1. 先画烂番茄 (棕色)
-            for(let k=0; k<task.rotten; k++) {
-                tomatoesHtml += `<span title="烂番茄: 暂停过多" class="cursor-help text-pomo-rotten">🤢</span>`; 
-            }
-
-            // 2. 再画正常番茄
-            const maxDisplay = Math.max(task.estimated, task.completed, 1);
-            for (let i = 0; i < maxDisplay; i++) {
-                if (i < task.completed) {
-                    if (i >= task.estimated && task.estimated > 0) {
-                        // 金番茄 (加班)
-                        tomatoesHtml += `<svg class="w-5 h-5 text-pomo-yellow drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg>`;
-                    } else {
-                        // 红番茄
-                        tomatoesHtml += `<svg class="w-5 h-5 text-pomo-red drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 4h-2v5h2V6z"/></svg>`;
-                    }
-                } else {
-                    if (i < task.estimated) {
-                        // 空心
-                        tomatoesHtml += `<svg class="w-5 h-5 text-gray-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 2c2 0 3 2 3 4"/></svg>`;
+                // 图标
+                let icons = '';
+                for(let i=0; i<(t.rotten||0); i++) icons += `<span class="text-lg leading-none select-none">🤢</span>`;
+                const total = Math.max(t.est, t.done, 1);
+                for(let i=0; i<total; i++) {
+                    if(i < t.done) {
+                        const color = (i >= t.est && t.est > 0) ? 'text-pomo-yellow' : 'text-pomo-red';
+                        icons += `<svg class="w-5 h-5 ${color} inline" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>`;
+                    } else if (i < t.est) {
+                        icons += `<svg class="w-5 h-5 text-gray-200 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
                     }
                 }
-            }
 
-            div.innerHTML = `
-                <div class="flex items-center gap-3 overflow-hidden">
-                    <div class="w-1 h-8 rounded-full ${type === 'planned' ? 'bg-pomo-red' : 'bg-pomo-blue'} shrink-0"></div>
-                    <div class="truncate font-semibold text-gray-700 text-sm">${task.title}</div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <div class="flex gap-[2px] items-center flex-wrap justify-end max-w-[120px]">
-                        ${tomatoesHtml}
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-gray-700 leading-tight transition-all ${isDone ? 'strike-red' : ''}">${t.title}</span>
+                        
+                        <div class="flex gap-1 -mt-1 -mr-1">
+                            <button onclick="toggleDone(${t.id}, '${type}', event)" class="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-green-500 active:scale-90 transition-transform" title="标记为完成">
+                                <svg class="w-6 h-6 ${isDone ? 'text-green-500' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            </button>
+                            <button onclick="deleteTask(${t.id}, '${type}', event)" class="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 active:scale-90 transition-transform" title="删除">
+                                <span class="text-xl">×</span>
+                            </button>
+                        </div>
                     </div>
-                    <button onclick="deleteTask(${task.id}, '${type}', event)" class="text-gray-200 hover:text-red-400 px-1 text-lg leading-none">×</button>
-                </div>
-            `;
-            return div;
+                    <div class="flex flex-wrap gap-1">${icons}</div>
+                `;
+                return div;
+            };
+
+            currentDayData.planned.forEach(t => pEl.appendChild(makeCard(t, 'planned')));
+            currentDayData.unplanned.forEach(t => uEl.appendChild(makeCard(t, 'unplanned')));
+            updateStatsUI();
         }
 
-        // --- 计时器 & 烂番茄逻辑 ---
-        
+        function updateStatsUI() {
+            const done = [...currentDayData.planned, ...currentDayData.unplanned].reduce((a,b)=>a+b.done,0);
+            const est = currentDayData.planned.reduce((a,b)=>a+b.est,0);
+            document.getElementById('statSummary').innerText = `完成 ${done} / 预估 ${est}`;
+        }
+
+        // --- 计时器逻辑 ---
         function toggleTimer() {
-            if (!activeTaskId && isWorkMode) {
-                alert('请先选择一个任务！');
-                return;
-            }
-            if (timerId) {
-                pauseTimer();
-            } else {
-                startTimer();
-            }
+            if(!activeTaskId && isWorkMode) return alert('先选个任务吧👇');
+            timerId ? pauseTimer() : startTimer();
         }
 
         function startTimer() {
             const btn = document.getElementById('mainBtn');
-            btn.textContent = '暂停';
+            btn.innerText = '暂停';
             btn.classList.add('bg-pomo-dark');
+            document.getElementById('pauseIndicator').style.opacity = isWorkMode ? 1 : 0;
             
-            document.getElementById('modeDisplay').textContent = isWorkMode ? 'FOCUSING... 🔥' : 'BREAK TIME 🌿';
-            document.getElementById('modeDisplay').className = `inline-block px-4 py-1 rounded-full text-white text-xs font-bold ${isWorkMode ? 'bg-pomo-red' : 'bg-pomo-green'}`;
-
-            // 显示暂停次数指示器
-            if(isWorkMode) updatePauseIndicator();
-
             timerId = setInterval(() => {
                 timeLeft--;
                 updateTimerDisplay();
-                if (timeLeft <= 0) completeSession();
+                if(timeLeft <= 0) finishTimer();
             }, 1000);
         }
 
         function pauseTimer() {
             clearInterval(timerId);
             timerId = null;
-            
-            const btn = document.getElementById('mainBtn');
-            btn.textContent = '继续';
-            btn.classList.remove('bg-pomo-dark');
+            document.getElementById('mainBtn').innerText = '继续';
+            document.getElementById('mainBtn').classList.remove('bg-pomo-dark');
 
-            // 只有在工作模式下暂停才会计数
-            if (isWorkMode) {
+            if(isWorkMode) {
                 pauseCount++;
-                updatePauseIndicator();
-                
-                // 烂番茄判定
-                if (pauseCount > 3) {
-                    markAsRotten();
-                }
+                updatePauseDots();
+                if(pauseCount > 3) triggerRotten();
             }
         }
 
-        function updatePauseIndicator() {
-            const container = document.getElementById('pauseIndicator');
-            container.style.opacity = isWorkMode ? '1' : '0';
-            const dots = container.children;
-            
+        function updatePauseDots() {
+            const dots = document.getElementById('pauseIndicator').children;
             for(let i=0; i<3; i++) {
-                if (i < pauseCount) {
-                    dots[i].className = 'w-2 h-2 rounded-full bg-pomo-rotten transition-colors';
-                } else {
-                    dots[i].className = 'w-2 h-2 rounded-full bg-gray-200 transition-colors';
-                }
+                dots[i].className = `w-1.5 h-1.5 rounded-full transition-colors ${i < pauseCount ? 'bg-pomo-rotten' : 'bg-gray-200'}`;
             }
         }
 
-        function markAsRotten() {
-            // 播放一个失败的音效(可选)或震动
+        function triggerRotten() {
             const display = document.getElementById('timerDisplay');
-            display.classList.add('text-pomo-rotten', 'shake-anim');
-            document.getElementById('timerCircle').setAttribute('stroke', '#8D6E63'); // 变棕色
+            display.innerText = "烂番茄";
+            display.classList.add('rotten-trigger');
             
+            const t = currentDayData[activeTaskType].find(x => x.id === activeTaskId);
+            if(t) {
+                t.rotten = (t.rotten || 0) + 1;
+                saveData();
+                render(); 
+            }
             setTimeout(() => {
-                alert("🚫 暂停次数过多！\n本次番茄已判定为“烂番茄”，不计入完成数。");
-                
-                // 数据记录
-                const task = currentDayData[activeTaskType].find(t => t.id === activeTaskId);
-                if (task) {
-                    task.rotten = (task.rotten || 0) + 1;
-                    saveData();
-                    renderAll();
-                }
-                
-                resetTimer(); // 强制重置
-                display.classList.remove('text-pomo-rotten', 'shake-anim');
-            }, 500);
+                resetTimerUI();
+                display.classList.remove('rotten-trigger');
+            }, 1000);
         }
 
-        function resetTimerLogicOnly() {
-            if(timerId) clearInterval(timerId);
-            timerId = null;
-            isWorkMode = true;
-            timeLeft = WORK_TIME;
-            pauseCount = 0;
-        }
-
-        function resetTimer() {
-            resetTimerLogicOnly();
-            updateTimerDisplay();
-            updatePauseIndicator();
-            
-            document.getElementById('modeDisplay').textContent = 'READY TO FOCUS';
-            document.getElementById('modeDisplay').className = 'inline-block px-4 py-1 rounded-full bg-red-50 text-pomo-red text-xs font-bold';
-            document.getElementById('mainBtn').textContent = '开始专注';
-            document.getElementById('timerCircle').setAttribute('stroke', '#FF6B6B');
-            document.getElementById('timerDisplay').classList.remove('text-pomo-rotten');
-        }
-
-        function completeSession() {
+        function finishTimer() {
             clearInterval(timerId);
             timerId = null;
             const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-            audio.play().catch(e=>{});
+            audio.play().catch(()=>{});
 
-            if (isWorkMode) {
-                // 完成正常的番茄
-                const task = currentDayData[activeTaskType].find(t => t.id === activeTaskId);
-                if (task) {
-                    task.completed++;
-                    saveData();
-                    renderAll();
-                }
-                
-                if(confirm('番茄完成！休息一下？')) {
+            if(isWorkMode) {
+                const t = currentDayData[activeTaskType].find(x => x.id === activeTaskId);
+                if(t) { t.done++; saveData(); render(); }
+                if(confirm('完成！休息一下？')) {
                     isWorkMode = false;
                     timeLeft = BREAK_TIME;
-                    document.getElementById('timerCircle').setAttribute('stroke', '#1DD1A1');
                     startTimer();
-                } else {
-                    resetTimer();
-                }
+                } else resetTimerUI();
             } else {
                 alert('休息结束！');
-                resetTimer();
+                resetTimerUI();
             }
         }
 
+        function resetTimer() {
+            if(timerId) clearInterval(timerId);
+            resetTimerUI();
+        }
+
+        function resetTimerUI() {
+            timerId = null;
+            timeLeft = WORK_TIME;
+            pauseCount = 0;
+            isWorkMode = true;
+            document.getElementById('mainBtn').innerText = '开始';
+            document.getElementById('mainBtn').classList.remove('bg-pomo-dark');
+            document.getElementById('pauseIndicator').style.opacity = 0;
+            updatePauseDots();
+            updateTimerDisplay();
+        }
+
         function updateTimerDisplay() {
-            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-            const s = (timeLeft % 60).toString().padStart(2, '0');
-            document.getElementById('timerDisplay').textContent = `${m}:${s}`;
-            
-            // 进度条
+            const m = Math.floor(timeLeft/60).toString().padStart(2,'0');
+            const s = (timeLeft%60).toString().padStart(2,'0');
+            document.getElementById('timerDisplay').innerText = `${m}:${s}`;
             const total = isWorkMode ? WORK_TIME : BREAK_TIME;
-            const offset = 289 - (timeLeft / total) * 289;
-            document.getElementById('timerCircle').style.strokeDashoffset = offset;
+            const dash = 289;
+            const off = dash - (timeLeft/total)*dash;
+            const circle = document.getElementById('timerCircle');
+            circle.style.strokeDashoffset = off;
+            circle.setAttribute('stroke', isWorkMode ? '#FF6B6B' : '#1DD1A1');
         }
-
-        function updateStats() {
-            const allTasks = [...currentDayData.planned, ...currentDayData.unplanned];
-            const done = allTasks.reduce((s, t) => s + t.completed, 0);
-            const rotten = allTasks.reduce((s, t) => s + (t.rotten || 0), 0);
-            const est = currentDayData.planned.reduce((s, t) => s + t.estimated, 0);
-            
-            document.getElementById('statDone').textContent = done;
-            document.getElementById('statRotten').textContent = rotten;
-            document.getElementById('statMins').textContent = done * 25;
-            
-            // 预估偏差 (实际完成 - 预估)
-            // 只有Planned任务参与偏差计算比较合理
-            const plannedDone = currentDayData.planned.reduce((s,t) => s + t.completed, 0);
-            const diff = plannedDone - est;
-            const diffEl = document.getElementById('statDiff');
-            diffEl.textContent = diff > 0 ? `+${diff}` : diff;
-            diffEl.className = diff > 0 ? 'font-black text-pomo-yellow text-xl' : 'font-black text-gray-400 text-xl';
-        }
-
     </script>
 </body>
 </html>
